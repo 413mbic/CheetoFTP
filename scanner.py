@@ -1,4 +1,4 @@
-import ftputil, time, queue, os
+import ftputil, time, queue, os, time
 from threading import Thread, Lock
 from urllib.parse import urljoin
 
@@ -16,43 +16,43 @@ class Scanner:
         self.__max_itemsize = max_itemsize
         self.__item_number = 0
         self.__start_dir = None
+        self.__worker_timeout = 5
 
     def __item_save_checkpoint(self, wid):
 
-        if self.__itemsize[wid] > self.__max_itemsize:
-            self.__itemsize[wid] = 0
+        self.__itemsize[wid] = 0
 
-            # __item_number is shared between threads,
-            # so we need to use a primitive lock before
-            # incrementing it.
+        # __item_number is shared between threads,
+        # so we need to use a primitive lock before
+        # incrementing it.
 
-            lock = Lock()
-            lock.acquire()
+        lock = Lock()
+        lock.acquire()
 
-            try:
-                self.__item_number += 1
-            finally:
-                lock.release()
+        try:
+            self.__item_number += 1
+        finally:
+            lock.release()
 
-            if os.path.isdir("item") is False:
-                os.mkdir("item")
-            
-            item_name = "{}_{}".format(self.url, self.__item_number)
-            item_path = os.path.join("item", item_name)
+        if os.path.isdir("item") is False:
+            os.mkdir("item")
+        
+        item_name = "{}_{}".format(self.url, self.__item_number)
+        item_path = os.path.join("item", item_name)
 
-            num_files = 0
-            itemsize = 0
+        num_files = 0
+        itemsize = 0
 
-            with open(item_path, 'w') as f:
-                while self.__file_queue[wid].empty() is False:
-                    file_size, file_path = self.__file_queue[wid].get()
-                    num_files += 1
-                    itemsize += file_size
-                    f.write("{}\n".format(file_path))
+        with open(item_path, 'w') as f:
+            while self.__file_queue[wid].empty() is False:
+                file_size, file_path = self.__file_queue[wid].get()
+                num_files += 1
+                itemsize += file_size
+                f.write("{}\n".format(file_path))
 
-                f.write("ITEM_NAME: {}\n".format(item_name))
-                f.write("ITEM_TOTAL_SIZE: {}\n".format(itemsize))
-                f.write("ITEM_TOTAL_LINKS: {}\n".format(num_files))
+            f.write("ITEM_NAME: {}\n".format(item_name))
+            f.write("ITEM_TOTAL_SIZE: {}\n".format(itemsize))
+            f.write("ITEM_TOTAL_LINKS: {}\n".format(num_files))
 
     def __save_to_archive(self, file_size, file_path):
         if os.path.isdir("archive") is False:
@@ -97,9 +97,11 @@ class Scanner:
 
                 self.__file_queue[wid].put(path_tuple)
 
-                self.__item_save_checkpoint(wid)
+                if self.__itemsize[wid] > self.__max_itemsize:
+                    self.__item_save_checkpoint(wid)
 
                 t = Thread(target=self.__save_to_archive, args=(size,full_path))
+                t.daemon = True
                 t.start()
 
                 print("{}, {}".format(self.__file_queue[wid].qsize(), self.__itemsize))
@@ -124,6 +126,8 @@ class Scanner:
                               self.__ftp_user,
                               self.__ftp_pass)
 
+        queue_empty_count = 0
+
         while True:
             # Snuff all the errors so that workers don't die
             # along the way. Also re-establish connection
@@ -131,12 +135,14 @@ class Scanner:
             try:
                 path = self.__work_queue.get()
                 self.__scan_dir(path, wid, cnx)
+                self.__work_queue.task_done()
             except Exception as e:
                 print("WORKER {} ERROR - Re-establishing connection...".format(wid))
                 print(e)
                 cnx = ftputil.FTPHost(self.url,
                               self.__ftp_user,
                               self.__ftp_pass)
+
 
     def scan(self):      
         
@@ -155,4 +161,7 @@ class Scanner:
             t.start()
         
         self.__work_queue.join()
+        print("Discovery complete, saving remaining files to items...")
+        for wid in range(self.__max_threads):
+            self.__item_save_checkpoint(wid)
         print("All done :D")
