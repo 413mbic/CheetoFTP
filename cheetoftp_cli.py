@@ -2,7 +2,7 @@ import argparse, scanner
 
 parser = argparse.ArgumentParser(description='CheetoFTP - A cheese flavoured FTP file discovery script.')
 
-parser.add_argument('url', metavar='URL', help='URL to scan')
+parser.add_argument('url', metavar='URL', help='URL to scan. Must omit protocol and trailing slash. E.g: `l5eil01.larc.nasa.gov`')
 
 parser.add_argument('--user', metavar='User', help="Username to use to login into the FTP URL. Defaults to `anonymous`.", default="anonymous")
 parser.add_argument('--passwd', metavar='Passwd', help="Password to use to login into the FTP URL. Defaults to `anonymous`.", default="anonymous")
