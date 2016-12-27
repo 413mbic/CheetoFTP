@@ -1,12 +1,13 @@
-from threading import Thread, Lock
-from urllib.parse import urljoin
-
 import codecs
-import ftputil
 import time
 import queue
 import os
+import sys
 import urllib.request
+from threading import Thread, Lock
+from urllib.parse import urljoin
+
+import ftputil
 
 
 class Scanner:
@@ -177,7 +178,8 @@ class Scanner:
         if any(map(lambda s: self.get_full_path(dir).startswith(s), self.symlink_destinations)):
             return None
 
-        print('Checking {}.'.format(dir))
+        print('Checking {}.'.format(dir.encode("latin1").decode("utf8")))
+        sys.stdout.flush()
 
         # if we don't change dirs here,
         # isdir/isfile will return false-positives
@@ -243,7 +245,7 @@ class Scanner:
                     self.__problem_paths[path] = 0
                 self.__problem_paths[path] += 1
                 if self.__problem_paths[path] <= 5:
-                    print('Retrying {}.'.format(path))
+                    print('Requeueing {}.'.format(path))
                     self.__work_queue.put(path)
                 else:
                     print('Skipping {}.'.format(path))
