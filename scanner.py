@@ -110,8 +110,8 @@ class Scanner:
         if self.__archivesize >= 1000:
             self.__save_to_archive()
 
-        print("{}, {}".format(self.__file_queue[wid].qsize(), self.__itemsize))
-        print(">> [{}-{}], {}".format(status, wid, full_path))
+        #print("{}, {}".format(self.__file_queue[wid].qsize(), self.__itemsize))
+        #print(">> [{}-{}], {}".format(status, wid, full_path))
 
     def __save_to_archive(self):
         self.__archivesize = 0
@@ -176,6 +176,8 @@ class Scanner:
     def __scan_dir(self, dir, wid, cnx):
         if any(map(lambda s: self.get_full_path(dir).startswith(s), self.symlink_destinations)):
             return None
+
+        print('Checking {}.'.format(dir))
 
         # if we don't change dirs here,
         # isdir/isfile will return false-positives
