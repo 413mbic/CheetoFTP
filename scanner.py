@@ -10,23 +10,23 @@ import urllib.request
 
 
 class Scanner:
-    ARCHIVE_DIR = "archive"
-    ITEM_DIR = "item"
     FTP_SCHEME_PREFIX = "ftp://"
 
     def __init__(self, url, user="anonymous", passwd="anonymous",
           max_threads=2, max_itemsize=209715200):
         self.url = url
+        self.archive_dir = os.path.join(self.url, "archive")
+        self.item_dir = os.path.join(self.url, "item")
         self.worker_timeout = 5
         self.symlinks = set()
         self.symlink_destinations = set()
         self.found_dirs = set()
-        self.archive_path = os.path.join(self.ARCHIVE_DIR, self.url)
-        self.item_number_path = os.path.join(self.ARCHIVE_DIR, self.url \
+        self.archive_path = os.path.join(self.archive_dir, self.url)
+        self.item_number_path = os.path.join(self.archive_dir, self.url \
             + "_item_number")
-        self.symlink_path = os.path.join(self.ITEM_DIR,
+        self.symlink_path = os.path.join(self.item_dir,
             "_".join([self.url, "symlinks"]))
-        self.bad_url_path = os.path.join(self.ITEM_DIR,
+        self.bad_url_path = os.path.join(self.item_dir,
             "_".join([self.url, "bad_url"]))
 
         self.__problem_paths = {}
@@ -43,10 +43,10 @@ class Scanner:
         self.__start_dir = None
         self.__item_number = 0
         
-        if not os.path.isdir(self.ARCHIVE_DIR):
-           os.mkdir(self.ARCHIVE_DIR)
-        if not os.path.isdir(self.ITEM_DIR):
-           os.mkdir(self.ITEM_DIR)
+        if not os.path.isdir(self.archive_dir):
+           os.makedirs(self.archive_dir)
+        if not os.path.isdir(self.item_dir):
+           os.makedirs(self.item_dir)
 
         self.__symlink_cnx = codecs.open(self.symlink_path, "w", encoding="utf8")
         self.__archive_cnx = codecs.open(self.archive_path, "w", encoding="utf8")
@@ -66,7 +66,7 @@ class Scanner:
             lock.release()
 
         item_name = "{}_{}".format(self.url, self.__item_number)
-        item_path = os.path.join(self.ITEM_DIR, item_name)
+        item_path = os.path.join(self.item_dir, item_name)
 
         num_files = 0
         itemsize = 0
