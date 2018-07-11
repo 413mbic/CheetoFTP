@@ -9,10 +9,10 @@ from urllib.parse import urljoin
 
 import ftputil
 
+FTP_SCHEME_PREFIX = "ftp://"
+
 
 class Scanner:
-    FTP_SCHEME_PREFIX = "ftp://"
-
     def __init__(self, url, user="anonymous", passwd="anonymous",
           max_threads=2, max_itemsize=209715200):
         self.url = url
