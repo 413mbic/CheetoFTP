@@ -1,5 +1,7 @@
-__pycache__/*
-env/*
-.vscode/*
-archive/*
-item/*
+__pycache__/
+env/
+.vscode/
+archive/
+item/
+*~
+*.pyc
